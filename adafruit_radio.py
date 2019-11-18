@@ -43,12 +43,17 @@ Implementation Notes
 
 """
 import time
+import struct
 from adafruit_ble import BLERadio
 from adafruit_ble.advertising.adafruit import AdafruitRadio
 
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_radio.git"
+
+
+#: Maximum length of a message (in bytes).
+MAX_LENGTH = 22
 
 
 class Radio:
@@ -63,7 +68,7 @@ class Radio:
         Takes the same configuration arguments as the `configure` method.
         """
         self.ble = BLERadio()
-        self.configure(args)
+        self.configure(**args)
 
     def configure(self, channel=7):
         """
@@ -72,7 +77,10 @@ class Radio:
         :param int channel: The channel (0-255) the radio is listening /
             broadcasting on.
         """
-        self.channel = channel
+        if 0 <= channel < 256:
+            self.channel = channel
+        else:
+            raise ValueError("Channel must be in range 0-255")
 
     def send(self, message):
         """
@@ -89,8 +97,12 @@ class Radio:
 
         :param bytes message: The bytes to broadcast.
         """
+        if len(message) > MAX_LENGTH:
+            raise ValueError(
+                "Message too long (max length = {})".format(MAX_LENGTH)
+            )
         advertisement = AdafruitRadio()
-        advertisement.msg = message
+        advertisement.msg = struct.pack("<B", self.channel) + message 
         self.ble.start_advertising(advertisement)
         time.sleep(0.5)  # Hmm... blocking..??
         self.ble.stop_advertising()
@@ -127,8 +139,11 @@ class Radio:
             for entry in self.ble.start_scan(
                     AdafruitRadio, minimum_rssi=-255, timeout=1
                 ):
-                now = time.monotonic()
-                return (entry.msg, entry.rssi, now)
+                channel = struct.unpack("<B", entry.msg[:1])[0]
+                msg = entry.msg[1:]
+                if channel == self.channel:
+                    now = time.monotonic()
+                    return (msg, entry.rssi, now)
         finally:
             self.ble.stop_scan()
         return None
