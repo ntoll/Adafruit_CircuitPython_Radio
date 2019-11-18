@@ -42,30 +42,13 @@ Implementation Notes
   https://github.com/adafruit/circuitpython/releases
 
 """
+import time
 from adafruit_ble import BLERadio
-from adafruit_ble.advertising.adafruit import *  # First just make it work ;-)
+from adafruit_ble.advertising.adafruit import AdafruitRadio
 
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_radio.git"
-
-
-_BYTE_DATA_ID = const(0x0001)  # TODO: check this isn't already taken.
-
-
-class AdafruitRadio(Advertisement):
-    prefix = struct.pack("<BBHBH",
-                         0x6,
-                         _MANUFACTURING_DATA_ADT,
-                         _ADAFRUIT_COMPANY_ID,
-                         struct.calcsize("<HI"),
-                         _BYTE_DATA_ID) 
-    manufacturer_data = LazyField(ManufacturerData,
-                                  "manufacturer_data",
-                                  advertising_data_type=_MANUFACTURING_DATA_ADT,
-                                  company_id=_ADAFRUIT_COMPANY_ID,
-                                  key_encoding="<H")
-    msg = ManufacturerDataField(_BYTE_DATA_ID, "<s")  # char[] ?!?!
 
 
 class Radio:
@@ -108,9 +91,9 @@ class Radio:
         """
         advertisement = AdafruitRadio()
         advertisement.msg = message
-        ble.start_advertising(advertisement)
+        self.ble.start_advertising(advertisement)
         time.sleep(0.5)  # Hmm... blocking..??
-        ble.stop_advertising()
+        self.ble.stop_advertising()
 
     def receive(self):
         """
@@ -140,6 +123,8 @@ class Radio:
 
         :return: A tuple representation of the received message, or else None.
         """
-        for entry in ble.start_scan(AdafruitRadio, minimum_rssi=-255, timeout=1):
+        for entry in self.ble.start_scan(
+                AdafruitRadio, minimum_rssi=-255, timeout=1
+            ):
             now = time.monotonic()
             return (entry.msg, entry.rssi, now)
