@@ -30,7 +30,8 @@ This is easily achieved by downloading
 Usage Example
 =============
 
-::
+All the functionality is exposed via the very simple ``Radio`` class::
+
     from adafruit_radio import Radio
 
 
