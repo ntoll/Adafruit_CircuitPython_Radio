@@ -123,8 +123,12 @@ class Radio:
 
         :return: A tuple representation of the received message, or else None.
         """
-        for entry in self.ble.start_scan(
-                AdafruitRadio, minimum_rssi=-255, timeout=1
-            ):
-            now = time.monotonic()
-            return (entry.msg, entry.rssi, now)
+        try:
+            for entry in self.ble.start_scan(
+                    AdafruitRadio, minimum_rssi=-255, timeout=1
+                ):
+                now = time.monotonic()
+                return (entry.msg, entry.rssi, now)
+        finally:
+            self.ble.stop_scan()
+        return None
