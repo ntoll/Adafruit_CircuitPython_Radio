@@ -26,25 +26,21 @@
 Simple byte and string based inter-device communication via BLE.
 
 
-* Author(s): Nicholas H.Tollervey
+* Author(s): Nicholas H.Tollervey for Adafruit Industries
 
 Implementation Notes
 --------------------
 
 **Hardware:**
 
-.. todo:: Add links to any specific hardware product page(s), or category page(s). Use unordered list & hyperlink rST
-   inline format: "* `Link Text <url>`_"
+   Adafruit Feather nRF52840 Express <https://www.adafruit.com/product/4062>
+   Adafruit Circuit Playground Bluefruit <https://www.adafruit.com/product/4333>
 
 **Software and Dependencies:**
 
 * Adafruit CircuitPython firmware for the supported boards:
   https://github.com/adafruit/circuitpython/releases
 
-.. todo:: Uncomment or remove the Bus Device and/or the Register library dependencies based on the library's use of either.
-
-# * Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
-# * Adafruit's Register library: https://github.com/adafruit/Adafruit_CircuitPython_Register
 """
 
 # imports
