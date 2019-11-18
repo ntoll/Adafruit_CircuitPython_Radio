@@ -47,3 +47,74 @@ Implementation Notes
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_radio.git"
+
+
+class Radio:
+    """
+    Represents a connection through which one can send or receive strings
+    and bytes. The radio can be tuned to a specific channel upon initialisation
+    or via the `configure` method.
+    """
+
+    def __init__(self, **args):
+        """
+        Takes the same configuration arguments as the `configure` method.
+        """
+        self.configure(args)
+
+    def configure(self, channel=7):
+        """
+        Set configuration values for the radio.
+
+        :param int channel: The channel the radio is listening/broadcasting on.
+        """
+        self.channel = channel  # TODO: actual configuration!
+
+    def send(self, message):
+        """
+        Send a message string on the channel to which the radio is
+        broadcasting.
+
+        :param str message: The message string to broadcast.
+        """
+        return self.send_bytes(message.encode("utf-8"))
+
+    def send_bytes(self, message):
+        """
+        Send bytes on the channel to which the radio is broadcasting.
+
+        :param str message: The bytes to broadcast.
+        """
+        # TODO: send bytes on channel.
+        pass
+
+    def receive(self):
+        """
+        Returns a message received on the channel on which the radio is
+        listening.
+
+        :return: A string representation of the received message.
+        """
+        msg = self.receive_full()
+        if msg:
+            return msg[0].decode("utf-8")
+        else:
+            return None
+
+    def receive_full(self):
+        """
+        Returns a tuple containing three values representing a message received
+        on the channel on which the radio is listening. If no message was
+        received then `None` is returned.
+
+        The three values in the tuple represent:
+
+        * the bytes received.
+        * the RSSI (signal strength).
+        * a microsecond timestamp: the value returned by time.ticks_us() when
+          the message was received.
+
+        :return: A tuple representation of the received message, or else None.
+        """
+        # TODO: receive bytes and return tuple (or None).
+        pass
