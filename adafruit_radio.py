@@ -87,7 +87,7 @@ class Radio:
         """
         Send bytes on the channel to which the radio is broadcasting.
 
-        :param str message: The bytes to broadcast.
+        :param bytes message: The bytes to broadcast.
         """
         advertisement = AdafruitRadio()
         advertisement.msg = message
