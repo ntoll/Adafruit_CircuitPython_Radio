@@ -44,6 +44,7 @@ Implementation Notes
 """
 import time
 import struct
+import random
 from adafruit_ble import BLERadio
 from adafruit_ble.advertising.adafruit import AdafruitRadio
 
@@ -53,7 +54,10 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_radio.git"
 
 
 #: Maximum length of a message (in bytes).
-MAX_LENGTH = 22
+MAX_LENGTH = 21
+
+#: Amount of time to advertise a message (in seconds).
+AD_DURATION = 0.5
 
 
 class Radio:
@@ -67,7 +71,12 @@ class Radio:
         """
         Takes the same configuration arguments as the `configure` method.
         """
+        # For BLE related operations.
         self.ble = BLERadio()
+        # Contains timestamped message metadata to mitigate report of
+        # receiving of duplicate messages within AD_DURATION time frame.
+        self.msg_pool = set()
+        # Handle user related configuration.
         self.configure(**args)
 
     def configure(self, channel=7):
@@ -77,7 +86,7 @@ class Radio:
         :param int channel: The channel (0-255) the radio is listening /
             broadcasting on.
         """
-        if 0 <= channel < 256:
+        if -1 <= channel < 256:
             self.channel = channel
         else:
             raise ValueError("Channel must be in range 0-255")
@@ -97,14 +106,22 @@ class Radio:
 
         :param bytes message: The bytes to broadcast.
         """
+        # Ensure length of message.
         if len(message) > MAX_LENGTH:
             raise ValueError(
                 "Message too long (max length = {})".format(MAX_LENGTH)
             )
         advertisement = AdafruitRadio()
-        advertisement.msg = struct.pack("<B", self.channel) + message 
+        # Channel byte.
+        chan = struct.pack("<B", self.channel)
+        # "Unique" id byte (to avoid duplication when receiving messages in
+        # an AD_DURATION timeframe).
+        uid = struct.pack("<B", random.getrandbits(8))
+        # Concatenate the bytes that make up the advertised message.
+        advertisement.msg = chan + uid + message 
+        # Advertise (block) for AD_DURATION period of time.
         self.ble.start_advertising(advertisement)
-        time.sleep(0.5)  # Hmm... blocking..??
+        time.sleep(AD_DURATION)
         self.ble.stop_advertising()
 
     def receive(self):
@@ -112,11 +129,11 @@ class Radio:
         Returns a message received on the channel on which the radio is
         listening.
 
-        :return: A string representation of the received message.
+        :return: A string representation of the received message, or else None.
         """
         msg = self.receive_full()
         if msg:
-            return msg[0].decode("utf-8")
+            return msg[0].decode("utf-8").replace("\x00", "")
         else:
             return None
 
@@ -139,11 +156,32 @@ class Radio:
             for entry in self.ble.start_scan(
                     AdafruitRadio, minimum_rssi=-255, timeout=1
                 ):
-                channel = struct.unpack("<B", entry.msg[:1])[0]
-                msg = entry.msg[1:]
-                if channel == self.channel:
+                # Extract channel and unique message ID bytes.
+                chan, uid = struct.unpack("<BB", entry.msg[:2])
+                if chan == self.channel:
                     now = time.monotonic()
-                    return (msg, entry.rssi, now)
+                    addr = entry.address.address_bytes
+                    # Ensure this message isn't a duplicate. Message metadata
+                    # is a tuple of (now, chan, uid, addr), to (mostly)
+                    # uniquely identify a specific message in a certain time
+                    # window.
+                    expired_metadata = set()
+                    duplicate = False
+                    for msg_metadata in self.msg_pool:
+                        if msg_metadata[0] < now - AD_DURATION:
+                            # Ignore expired entries and mark for removal.
+                            expired_metadata.add(msg_metadata)
+                        elif (chan, uid, addr) == msg_metadata[1:]:
+                            # Ignore matched messages to avoid duplication.
+                            duplicate = True
+                    if not duplicate:
+                        # Add new message's metadata to the msg_pool and
+                        # return it as a result.
+                        self.msg_pool.add((now, chan, uid, addr))
+                        msg = entry.msg[2:]
+                        return (msg, entry.rssi, now)
+                    # Remove expired entries.
+                    self.msg_pool = self.msg_pool - expired_metadata
         finally:
             self.ble.stop_scan()
         return None
