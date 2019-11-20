@@ -73,21 +73,24 @@ class Radio:
         """
         # For BLE related operations.
         self.ble = BLERadio()
+        # The uid for outgoing message. Incremented by one on each send, up to
+        # 255 when it's reset to 0.
+        self.uid = 0
         # Contains timestamped message metadata to mitigate report of
         # receiving of duplicate messages within AD_DURATION time frame.
         self.msg_pool = set()
         # Handle user related configuration.
         self.configure(**args)
 
-    def configure(self, channel=7):
+    def configure(self, channel=42):
         """
         Set configuration values for the radio.
 
         :param int channel: The channel (0-255) the radio is listening /
             broadcasting on.
         """
-        if -1 <= channel < 256:
-            self.channel = channel
+        if -1 < channel < 256:
+            self._channel = channel
         else:
             raise ValueError("Channel must be in range 0-255")
 
@@ -113,10 +116,14 @@ class Radio:
             )
         advertisement = AdafruitRadio()
         # Channel byte.
-        chan = struct.pack("<B", self.channel)
+        chan = struct.pack("<B", self._channel)
         # "Unique" id byte (to avoid duplication when receiving messages in
         # an AD_DURATION timeframe).
-        uid = struct.pack("<B", random.getrandbits(8))
+        uid = struct.pack("<B", self.uid)
+        # Increment (and reset if needed) the uid.
+        self.uid += 1
+        if self.uid > 255:
+            self.uid = 0
         # Concatenate the bytes that make up the advertised message.
         advertisement.msg = chan + uid + message 
         # Advertise (block) for AD_DURATION period of time.
@@ -147,7 +154,7 @@ class Radio:
 
         * the bytes received.
         * the RSSI (signal strength: 0 = max, -255 = min).
-        * a microsecond timestamp: the value returned by time.ticks_us() when
+        * a microsecond timestamp: the value returned by time.monotonic() when
           the message was received.
 
         :return: A tuple representation of the received message, or else None.
@@ -158,7 +165,7 @@ class Radio:
                 ):
                 # Extract channel and unique message ID bytes.
                 chan, uid = struct.unpack("<BB", entry.msg[:2])
-                if chan == self.channel:
+                if chan == self._channel:
                     now = time.monotonic()
                     addr = entry.address.address_bytes
                     # Ensure this message isn't a duplicate. Message metadata
@@ -174,14 +181,14 @@ class Radio:
                         elif (chan, uid, addr) == msg_metadata[1:]:
                             # Ignore matched messages to avoid duplication.
                             duplicate = True
+                    # Remove expired entries.
+                    self.msg_pool = self.msg_pool - expired_metadata
                     if not duplicate:
                         # Add new message's metadata to the msg_pool and
                         # return it as a result.
                         self.msg_pool.add((now, chan, uid, addr))
                         msg = entry.msg[2:]
                         return (msg, entry.rssi, now)
-                    # Remove expired entries.
-                    self.msg_pool = self.msg_pool - expired_metadata
         finally:
             self.ble.stop_scan()
         return None

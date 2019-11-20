@@ -69,6 +69,16 @@ All the functionality is exposed via the very simple ``Radio`` class::
                   msg_strength,
                   msg_time))
 
+Unit Tests
+==========
+
+To run the test suite you should have ``pytest`` and ``pytest-coverage``
+installed (``pip install pytest pytest-coverage``).
+
+Run the unit tests with the following command::
+
+    $ pytest --cov-report term-missing --cov=adafruit_radio tests/
+
 Contributing
 ============
 
