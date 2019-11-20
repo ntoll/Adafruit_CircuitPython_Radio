@@ -125,7 +125,7 @@ class Radio:
         if self.uid > 255:
             self.uid = 0
         # Concatenate the bytes that make up the advertised message.
-        advertisement.msg = chan + uid + message 
+        advertisement.msg = chan + uid + message
         # Advertise (block) for AD_DURATION period of time.
         self.ble.start_advertising(advertisement)
         time.sleep(AD_DURATION)
@@ -161,8 +161,8 @@ class Radio:
         """
         try:
             for entry in self.ble.start_scan(
-                    AdafruitRadio, minimum_rssi=-255, timeout=1
-                ):
+                AdafruitRadio, minimum_rssi=-255, timeout=1
+            ):
                 # Extract channel and unique message ID bytes.
                 chan, uid = struct.unpack("<BB", entry.msg[:2])
                 if chan == self._channel:
