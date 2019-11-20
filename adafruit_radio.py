@@ -28,9 +28,6 @@ Simple byte and string based inter-device communication via BLE.
 
 * Author(s): Nicholas H.Tollervey for Adafruit Industries
 
-Implementation Notes
---------------------
-
 **Hardware:**
 
    Adafruit Feather nRF52840 Express <https://www.adafruit.com/product/4062>

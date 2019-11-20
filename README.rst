@@ -16,9 +16,9 @@ Introduction
 This library provides simple byte and string based inter-device communication
 via BLE.
 
-It works like a walkie-talkie: you can configure your device to a certain
-channel (numbered 0-255, default being 7) and your device will broadcast on
-that channel and receive any messages from other devices using that channel.
+It works like a walkie-talkie: configure your device to use a certain channel
+(numbered 0-255, default being 42) and it will broadcast on that channel and
+receive any messages from other devices using that channel.
 
 Dependencies
 =============
