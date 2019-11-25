@@ -51,7 +51,7 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_radio.git"
 
 
 #: Maximum length of a message (in bytes).
-MAX_LENGTH = 21
+MAX_LENGTH = 248
 
 #: Amount of time to advertise a message (in seconds).
 AD_DURATION = 0.5
@@ -158,7 +158,7 @@ class Radio:
         """
         try:
             for entry in self.ble.start_scan(
-                AdafruitRadio, minimum_rssi=-255, timeout=1
+                AdafruitRadio, minimum_rssi=-255, timeout=1, extended=True
             ):
                 # Extract channel and unique message ID bytes.
                 chan, uid = struct.unpack("<BB", entry.msg[:2])

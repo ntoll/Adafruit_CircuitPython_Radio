@@ -136,7 +136,8 @@ def test_radio_receive_full_no_messages(radio):
     radio.ble.start_scan.return_value = []
     assert radio.receive_full() is None
     radio.ble.start_scan.assert_called_once_with(
-        adafruit_radio.AdafruitRadio, minimum_rssi=-255, timeout=1
+        adafruit_radio.AdafruitRadio, minimum_rssi=-255, timeout=1,
+        extended=True
     )
     radio.ble.stop_scan.assert_called_once_with()
 
